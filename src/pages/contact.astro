@@ -1,0 +1,47 @@
+---
+import Base from "../layouts/Base.astro";
+import { siteConfig } from "../config/site";
+---
+
+<Base title="Kontakt">
+  <header class="page-heading">
+    <p class="eyebrow">Kontakt / Lass uns reden</p><h1>
+      Solidarität beginnt<br /><em>mit einem Hallo.</em>
+    </h1><p class="intro">
+      Eine Frage, eine Idee oder Lust, dazuzukommen? Wir freuen uns, von dir zu
+      hören.
+    </p>
+  </header>
+  <div class="contact-grid">
+    <section class="contact-panel">
+      <p class="eyebrow">01 / Direkt an uns</p><h2>
+        Post ins<br /><em>Postfach.</em>
+      </h2><p>
+        Für Fragen zum Buchclub, zu Veranstaltungen oder zum Mitmachen.
+      </p>{
+        siteConfig.contactEmail && (
+          <a class="contact-email" href={`mailto:${siteConfig.contactEmail}`}>
+            {siteConfig.contactEmail} <span aria-hidden="true">↗</span>
+          </a>
+        )
+      }<p class="contact-location">
+        {siteConfig.name}<br />{siteConfig.town}, {siteConfig.region}
+      </p>
+    </section>
+    <section class="contact-panel social-panel">
+      <p class="eyebrow">02 / In Verbindung bleiben</p><h2>
+        Wir sehen uns<br /><em>im Feed.</em>
+      </h2><p>
+        Unsere aktuellen Einladungen, Veranstaltungshinweise und Beiträge
+        findest du auf Instagram. Du kannst uns auch dort eine Nachricht
+        schreiben.
+      </p><a class="button" href={siteConfig.instagramUrl} rel="external"
+        >Zu unserem Instagram <span aria-hidden="true">↗</span></a
+      ><p class="contact-location">
+        Lieber ohne Social Media?<br /><a href="/rss.xml"
+          >Beiträge per RSS abonnieren →</a
+        >
+      </p>
+    </section>
+  </div>
+</Base>

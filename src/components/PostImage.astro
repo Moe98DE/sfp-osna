@@ -1,0 +1,21 @@
+---
+import type { LocalImage } from "../lib/content/schema";
+interface Props {
+  image: LocalImage;
+  eager?: boolean;
+}
+const { image, eager = false } = Astro.props;
+---
+
+<img
+  src={image.src}
+  srcset={image.smallWidth < image.width
+    ? `${image.smallSrc} ${image.smallWidth}w, ${image.src} ${image.width}w`
+    : undefined}
+  sizes="(max-width: 650px) 100vw, (max-width: 1000px) 50vw, 800px"
+  alt={image.alt}
+  width={image.width}
+  height={image.height}
+  loading={eager ? "eager" : "lazy"}
+  decoding="async"
+/>

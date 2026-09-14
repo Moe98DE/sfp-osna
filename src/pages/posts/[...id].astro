@@ -1,0 +1,123 @@
+---
+import { render } from "astro:content";
+import { publishedPosts, displayDate } from "../../lib/content/posts";
+import { absoluteUrl, jsonLd } from "../../lib/seo";
+import { siteConfig } from "../../config/site";
+import Base from "../../layouts/Base.astro";
+import PostImage from "../../components/PostImage.astro";
+export async function getStaticPaths() {
+  return (await publishedPosts()).map((post) => ({
+    params: { id: post.id },
+    props: { post },
+  }));
+}
+const { post } = Astro.props;
+const { Content } = await render(post);
+const data = post.data;
+const firstImage = data.images[0];
+const url = absoluteUrl(`/posts/${post.id}/`);
+const structured = {
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "@id": `${url}#article`,
+  headline: data.title,
+  description: data.description,
+  datePublished: data.publishedAt,
+  dateModified: data.updatedAt,
+  mainEntityOfPage: url,
+  inLanguage: siteConfig.language,
+  image: data.images.map((img) => absoluteUrl(img.src)),
+  author: { "@id": `${siteConfig.url}/#organization` },
+  publisher: { "@id": `${siteConfig.url}/#organization` },
+  isBasedOn: data.instagram.permalink,
+  keywords: data.tags.join(", "),
+};
+const breadcrumbs = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Start", item: siteConfig.url },
+    {
+      "@type": "ListItem",
+      position: 2,
+      name: "Beiträge",
+      item: absoluteUrl("/posts/"),
+    },
+    { "@type": "ListItem", position: 3, name: data.title, item: url },
+  ],
+};
+---
+
+<Base
+  title={data.title}
+  description={data.description}
+  image={firstImage?.src}
+  imageAlt={firstImage?.alt}
+  article
+  publishedAt={data.publishedAt}
+  updatedAt={data.updatedAt}
+>
+  <Fragment slot="head"
+    ><script
+      is:inline
+      type="application/ld+json"
+      set:html={jsonLd(structured)}
+    /><script
+      is:inline
+      type="application/ld+json"
+      set:html={jsonLd(breadcrumbs)}
+    /></Fragment
+  >
+  <article class="article">
+    <nav class="breadcrumbs" aria-label="Brotkrümelnavigation">
+      <a href="/">Start</a><span aria-hidden="true">/</span><a href="/posts/"
+        >Beiträge</a
+      >
+    </nav><header class="article-header">
+      <p class="eyebrow">
+        <time datetime={data.publishedAt}>{displayDate(data.publishedAt)}</time
+        >{data.demo && <span class="badge">Demonstrationsbeitrag</span>}
+      </p><h1>{data.title}</h1><p class="lead">{data.summary}</p>
+    </header>
+    {
+      data.demo && (
+        <p class="demo-notice">
+          Beispielinhalt zur Demonstration der Website. Dies ist kein
+          tatsächlicher Instagram-Beitrag und keine Veranstaltungsankündigung.
+        </p>
+      )
+    }
+    {
+      firstImage && (
+        <figure class="article-cover">
+          <PostImage image={firstImage} eager />
+        </figure>
+      )
+    }
+    <div class="prose"><Content /></div>
+    {
+      data.images.length > 1 && (
+        <section class="gallery" aria-label="Weitere Bilder">
+          {data.images.slice(1).map((image) => (
+            <figure>
+              <PostImage image={image} />
+              <figcaption>{image.alt}</figcaption>
+            </figure>
+          ))}
+        </section>
+      )
+    }
+    <footer class="article-footer">
+      <p class="eyebrow">{data.tags.join(" · ")}</p><a
+        class="button"
+        href={data.instagram.permalink}
+        rel="external"
+        >{
+          data.demo
+            ? "Zum Instagram-Konto"
+            : "Originalbeitrag / Video auf Instagram"
+        } ↗</a
+      ><p><a href="/posts/">← Zurück zu allen Beiträgen</a></p>
+    </footer>
+  </article>
+</Base>

@@ -1,0 +1,24 @@
+---
+import Base from "../../layouts/Base.astro";
+import PostCard from "../../components/PostCard.astro";
+import { publishedPosts } from "../../lib/content/posts";
+import { siteConfig } from "../../config/site";
+const posts = await publishedPosts();
+---
+
+<Base
+  title="Beiträge"
+  description={`Nachrichten und Beiträge von ${siteConfig.name}, mit Bildern und Links zu den Instagram-Originalen.`}
+  ><header class="page-heading">
+    <p class="eyebrow">Das Archiv / Texte & Perspektiven</p><h1>
+      Was uns bewegt.<br /><em>Was bleibt.</em>
+    </h1><p>
+      Beiträge, Bilder und Gedanken aus unserem Feed. Zum Lesen, Teilen und
+      Wiederfinden – die neuesten zuerst.
+    </p>
+  </header><section aria-label="Alle Beiträge" class="post-grid">
+    {posts.map((post) => <PostCard post={post} headingLevel={2} />)}{
+      !posts.length && <p>Noch keine Beiträge veröffentlicht.</p>
+    }
+  </section></Base
+>

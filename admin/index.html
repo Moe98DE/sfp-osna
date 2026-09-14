@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="admin-token" content="__CSRF__" />
+    <title>Beiträge verwalten · SFP Osna</title>
+    <link rel="stylesheet" href="/admin.css" />
+    <script src="/admin.js" defer></script>
+  </head>
+  <body>
+    <header>
+      <div>
+        <p class="eyebrow">SFP Osna · Lokale Redaktion</p>
+        <h1>Beiträge verwalten</h1>
+      </div>
+      <a href="http://127.0.0.1:4321/" target="_blank" rel="noopener"
+        >Website öffnen ↗</a
+      >
+    </header>
+    <main>
+      <section class="tools" aria-label="Import und Website-Build">
+        <div>
+          <h2>Von Instagram holen</h2>
+          <p>Bestehende Artikel und deine Änderungen bleiben erhalten.</p>
+        </div>
+        <div class="actions">
+          <button data-job="newest">Neuesten Beitrag holen</button
+          ><button data-job="all">Alle fehlenden importieren</button
+          ><button data-job="build" class="secondary">Website bauen</button>
+        </div>
+        <p id="connection">Konfiguration wird geprüft …</p>
+        <details>
+          <summary>Ohne Zugangsdaten ausprobieren</summary>
+          <p>
+            Importiert die gekennzeichneten Beispielbeiträge. Es wird keine API
+            aufgerufen.
+          </p>
+          <button data-job="fixture" class="secondary">
+            Demo-Daten importieren
+          </button>
+        </details>
+      </section>
+      <p class="notice">
+        Du bearbeitest die lokalen Dateien. Für Änderungen auf der öffentlichen
+        Website anschließend bauen und deployen oder die Änderungen zu GitHub
+        pushen. Der Build-Button lädt nichts hoch.
+      </p>
+      <p id="message" role="status" aria-live="polite"></p>
+      <section id="job" hidden aria-label="Aktueller Vorgang">
+        <h2 id="job-title">Vorgang</h2>
+        <pre id="job-log" role="log" aria-live="off"></pre>
+      </section>
+      <div class="workspace">
+        <aside aria-label="Artikelauswahl">
+          <label for="search">Artikel suchen</label
+          ><input
+            id="search"
+            type="search"
+            placeholder="Titel oder Instagram-ID"
+          /><label for="filter">Anzeigen</label
+          ><select id="filter">
+            <option value="all">Alle Artikel</option>
+            <option value="published">Veröffentlicht</option>
+            <option value="draft">Entwürfe / Prüfung</option>
+            <option value="trash">Papierkorb</option>
+          </select>
+          <p id="count" class="muted"></p>
+          <div id="list"></div>
+        </aside>
+        <section class="editor-panel">
+          <p id="empty">Wähle einen Artikel aus, um ihn zu bearbeiten.</p>
+          <form id="editor" hidden>
+            <div class="editor-heading">
+              <h2>Artikel bearbeiten</h2>
+              <a id="original" target="_blank" rel="noopener noreferrer"
+                >Instagram-Original ↗</a
+              >
+            </div>
+            <p id="provenance" class="muted"></p>
+            <details id="source">
+              <summary>Quelltext und Hinweise ansehen</summary>
+              <h3>Original-Bildunterschrift</h3>
+              <p id="caption"></p>
+              <h3>Prüfhinweise</h3>
+              <ul id="warnings"></ul>
+            </details>
+            <label for="title">Titel</label
+            ><input id="title" required maxlength="110" />
+            <label for="description"
+              >Suchmaschinen-Beschreibung <small>max. 160 Zeichen</small></label
+            ><textarea
+              id="description"
+              required
+              maxlength="160"
+              rows="2"
+            ></textarea>
+            <label for="summary">Kurzfassung für die Beitragsliste</label
+            ><textarea
+              id="summary"
+              required
+              maxlength="350"
+              rows="3"
+            ></textarea>
+            <label for="body"
+              >Artikeltext
+              <small>Markdown: ## Überschrift, **fett**, Listen</small></label
+            ><textarea
+              id="body"
+              required
+              maxlength="200000"
+              rows="16"
+              spellcheck="true"
+            ></textarea>
+            <label for="tags"
+              >Schlagwörter <small>durch Kommas getrennt</small></label
+            ><input id="tags" />
+            <fieldset>
+              <legend>Bilder & Beschreibungen</legend>
+              <div id="images"></div>
+            </fieldset>
+            <div class="publication">
+              <label for="publication">Status</label
+              ><select id="publication">
+                <option value="draft">Entwurf</option>
+                <option value="published">Veröffentlicht</option></select
+              ><label class="check"
+                ><input id="reviewed" type="checkbox" />Fakten, Quellen und
+                Bildbeschreibungen sind geprüft.</label
+              >
+              <p class="muted">
+                Veröffentlichung ist nur nach bestätigter Prüfung möglich.
+              </p>
+            </div>
+            <div class="actions sticky">
+              <button type="submit">Änderungen speichern</button
+              ><button id="reload" type="button" class="secondary">
+                Neu laden</button
+              ><button id="delete" type="button" class="danger">
+                In den Papierkorb</button
+              ><span id="dirty" class="muted"></span>
+            </div>
+          </form>
+        </section>
+      </div>
+    </main>
+    <footer>
+      Lokaler Admin · Nur auf diesem Computer erreichbar · Keine Zugangsdaten im
+      Browser
+    </footer>
+  </body>
+</html>

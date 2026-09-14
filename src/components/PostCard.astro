@@ -1,0 +1,43 @@
+---
+import type { CollectionEntry } from "astro:content";
+import { displayDate } from "../lib/content/posts";
+import PostImage from "./PostImage.astro";
+interface Props {
+  post: CollectionEntry<"posts">;
+  headingLevel?: 2 | 3;
+}
+const { post, headingLevel = 3 } = Astro.props;
+const image = post.data.images[0];
+const Heading = headingLevel === 2 ? "h2" : "h3";
+---
+
+<article class="post-card">
+  <a
+    href={`/posts/${post.id}/`}
+    class="card-image"
+    tabindex="-1"
+    aria-hidden="true"
+    >{
+      image ? (
+        <PostImage image={{ ...image, alt: "" }} />
+      ) : (
+        <span class="no-image">{post.data.tags[0] ?? "Beitrag"}</span>
+      )
+    }</a
+  >
+  <div class="card-content">
+    <p class="eyebrow">
+      <time datetime={post.data.publishedAt}
+        >{displayDate(post.data.publishedAt)}</time
+      >{post.data.demo && <span class="badge">Demo</span>}
+    </p><Heading><a href={`/posts/${post.id}/`}>{post.data.title}</a></Heading
+    ><p>
+      {post.data.summary}
+    </p><a
+      class="read-more"
+      href={`/posts/${post.id}/`}
+      aria-label={`Weiterlesen: ${post.data.title}`}
+      >Weiterlesen <span aria-hidden="true">→</span></a
+    >
+  </div>
+</article>

@@ -1,0 +1,138 @@
+---
+import Base from "../layouts/Base.astro";
+import PostCard from "../components/PostCard.astro";
+import { publishedPosts } from "../lib/content/posts";
+import { siteConfig } from "../config/site";
+const posts = (await publishedPosts()).slice(0, 4);
+---
+
+<Base title={siteConfig.name}>
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="hero-copy">
+      <p class="eyebrow">
+        <span class="asterisk" aria-hidden="true">✳</span> Palästina-Solidarität aus
+        Osnabrück
+      </p>
+      <h1 id="hero-title">
+        Solidarität<br /><span>braucht</span><br /><em>uns alle.</em>
+      </h1>
+      <div class="hero-bottom">
+        <p class="intro">{siteConfig.introduction}</p>
+        <div class="hero-actions">
+          <a class="button" href="#neuigkeiten"
+            >Was uns bewegt <span aria-hidden="true">↘</span></a
+          >
+          <a class="text-link" href="/about/"
+            >Wer wir sind <span aria-hidden="true">↗</span></a
+          >
+        </div>
+      </div>
+      <span class="scribble hero-scribble" aria-hidden="true"
+        >lesen ✳ reden ✳ handeln</span
+      >
+    </div>
+    <div
+      class="hero-collage"
+      aria-label="Collage aus Plakatkunst, Olivenzweig, Granatapfel und Gruppenlogo"
+    >
+      <div class="collage-grid" aria-hidden="true"></div>
+      <figure class="collage-print">
+        <img
+          src="/moodboard/falastin-print.jpg"
+          alt="Rot-grüner Plakatdruck mit schwarz-weißem Kufiya-Muster"
+        />
+        <figcaption>Solidarity is something we make together.</figcaption>
+      </figure>
+      <div class="collage-note" aria-hidden="true">
+        <span>VON HIER.</span><em>Für Freiheit.</em><b>↗</b>
+      </div>
+      <img
+        class="collage-olive"
+        src="/moodboard/olive-branch.jpg"
+        alt=""
+        aria-hidden="true"
+      />
+      <img
+        class="collage-pomegranate"
+        src="/moodboard/pomegranate.jpg"
+        alt=""
+        aria-hidden="true"
+      />
+      <div class="collage-logo-sticker">
+        <img
+          src="/brand/sfpo-logo.png"
+          alt="Logo von Students for Palestine Osnabrück mit Wassermelone"
+          width="565"
+          height="560"
+        />
+      </div>
+      <span class="collage-index" aria-hidden="true">SFP / OSNA / 01</span>
+    </div>
+  </section>
+
+  <div class="solidarity-strip" aria-label={siteConfig.statement}>
+    <span aria-hidden="true">✳</span><p>{siteConfig.statement}</p><span
+      class="strip-note">Von Osna<br />in die Welt.</span
+    ><span aria-hidden="true">✳</span>
+  </div>
+
+  <section id="neuigkeiten" class="updates">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">01 / Aus unserem Archiv</p><h2>
+          Vom Feed.<br /><em>Aufs Papier.</em>
+        </h2>
+      </div>
+      <a class="text-link" href="/posts/"
+        >Alle Beiträge <span aria-hidden="true">↗</span></a
+      >
+    </div>
+    {
+      posts.length ? (
+        <div class="post-grid">
+          {posts.map((post) => (
+            <PostCard post={post} />
+          ))}
+        </div>
+      ) : (
+        <p class="empty">
+          Unsere Beiträge erscheinen bald hier. Aktuelle Termine und Nachrichten
+          findest du auf <a href={siteConfig.instagramUrl}>Instagram</a>.
+        </p>
+      )
+    }
+  </section>
+
+  <section class="together" aria-labelledby="together-title">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">02 / Mehr als ein Feed</p><h2 id="together-title">
+          Es passiert<br /><em>zwischen uns.</em>
+        </h2>
+      </div>
+      <p class="section-note">
+        Texte lesen. Perspektiven teilen.<br />Solidarität gemeinsam leben.
+      </p>
+    </div>
+    <div class="activity-grid">
+      {
+        siteConfig.activities.map((activity) => (
+          <article class="activity">
+            <span class="activity-number" aria-hidden="true">
+              {activity.number}
+            </span>
+            <p class="eyebrow">{activity.label}</p>
+            <h3>{activity.title}</h3>
+            <p>{activity.text}</p>
+          </article>
+        ))
+      }
+    </div>
+    <div class="join-line">
+      <p>Du möchtest dazukommen? <em>Schreib uns.</em></p><a
+        class="button"
+        href="/contact/">In Kontakt kommen <span aria-hidden="true">↗</span></a
+      >
+    </div>
+  </section>
+</Base>

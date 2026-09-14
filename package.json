@@ -1,0 +1,41 @@
+{
+  "name": "students-for-palestine-osna",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "admin": "tsx --env-file-if-exists=.env scripts/admin.ts",
+    "dev": "astro dev",
+    "build": "astro build && tsx scripts/prune-media.ts && tsx scripts/verify-build.ts",
+    "preview": "astro preview",
+    "check": "astro check && tsc --noEmit",
+    "test": "tsx --test tests/*.test.ts",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "sync": "tsx --env-file-if-exists=.env scripts/sync-instagram.ts",
+    "sync:fixture": "tsx scripts/sync-instagram.ts --fixture",
+    "deploy": "tsx --env-file-if-exists=.env scripts/deploy-neocities.ts"
+  },
+  "dependencies": {
+    "@astrojs/markdown-remark": "7.3.0",
+    "@astrojs/rss": "4.0.19",
+    "@astrojs/sitemap": "3.7.4",
+    "@google/genai": "2.21.0",
+    "astro": "7.3.1",
+    "rehype-sanitize": "6.0.0",
+    "sharp": "0.35.4",
+    "yaml": "2.9.0",
+    "zod": "4.5.4"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.10",
+    "@types/node": "26.4.1",
+    "prettier": "3.9.6",
+    "prettier-plugin-astro": "0.14.1",
+    "tsx": "4.23.13",
+    "typescript": "6.0.3"
+  }
+}

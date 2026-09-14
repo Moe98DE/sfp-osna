@@ -1,0 +1,42 @@
+---
+import Base from "../layouts/Base.astro";
+import { siteConfig } from "../config/site";
+---
+
+<Base title="Über uns">
+  <header class="page-heading">
+    <p class="eyebrow">Über uns / {siteConfig.town}</p><h1>
+      Hinschauen.<br />Zusammenkommen.<br /><em>Solidarisch sein.</em>
+    </h1><p class="intro">{siteConfig.introduction}</p>
+  </header>
+  <div class="about-layout">
+    <aside class="manifesto">
+      <span class="eyebrow">{siteConfig.shortName}</span><p>
+        {siteConfig.statement}
+      </p><span aria-hidden="true">✳</span>
+    </aside><div class="prose">
+      <h2>Hier vor Ort.<br /><em>Mit offenem Blick.</em></h2><p>
+        Wir sind {siteConfig.name}. Palästina-Solidarität verbindet uns. Unsere
+        Veranstaltungen bringen Menschen, Texte und Perspektiven zusammen: beim
+        Buchclub, bei Filmvorführungen und im gemeinsamen Austausch.
+      </p><h2>Lesen ist ein Anfang.</h2><p>
+        In unserem Buchclub beschäftigen wir uns mit palästinensischer Literatur
+        und Perspektiven. Filmabende eröffnen weitere Zugänge. Ein gemeinsames
+        Picknick schafft Platz für Begegnungen und Gespräche. Unterschiedliche
+        Formate, eine Verbindung: miteinander hinschauen und solidarisch
+        bleiben.
+      </p><h2>Und dann: ins Gespräch kommen.</h2><p>
+        Du interessierst dich für den Buchclub, möchtest mehr über unsere
+        Veranstaltungen erfahren oder hast eine Idee? <a href="/contact/"
+          >Melde dich bei uns.</a
+        > Aktuelle Einladungen, Orte und Termine veröffentlichen wir auf <a
+          href={siteConfig.instagramUrl}>Instagram</a
+        >.
+      </p><p>
+        Hier auf der Website sammeln wir unsere <a href="/posts/"
+          >Beiträge zum Nachlesen</a
+        >. Der Link zum Original bleibt immer dabei.
+      </p>
+    </div>
+  </div>
+</Base>

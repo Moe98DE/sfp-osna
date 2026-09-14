@@ -1,0 +1,1076 @@
+# Build a Static Instagram → Gemini → Website Publishing System
+
+You are a senior full-stack engineer. Build this project completely, not merely a scaffold or architectural proposal.
+
+The guiding priorities, in order, are:
+
+1. Simplicity
+2. Maintainability
+3. Reliability
+4. Functionality
+5. Good SEO and machine readability
+6. Visual polish
+
+Avoid unnecessary abstractions, frameworks, services, databases, queues, containers, and infrastructure.
+
+The finished website must be deployable as a completely static site to a host such as Neocities.
+
+---
+
+# 1. Project Goal
+
+Build a small organization's public website.
+
+The organization primarily publishes updates on Instagram.
+
+The website should automatically detect new Instagram posts, retrieve their captions and media, use Google's Gemini API to turn them into richer web articles, store those articles locally as version-controlled content, rebuild the static website, and deploy it.
+
+The conceptual pipeline is:
+
+Instagram
+→ official Meta API
+→ sync script
+→ download/optimize media
+→ Gemini
+→ validate structured response
+→ generate local article
+→ static site build
+→ deploy
+
+There must be no requirement for:
+
+- a database
+- an always-running backend
+- a CMS
+- browser-side API calls to Gemini or Instagram
+- secrets in frontend JavaScript
+- a persistent server process
+
+GitHub Actions should be capable of running the entire publishing pipeline periodically.
+
+---
+
+# 2. Technology Choices
+
+Use:
+
+- Astro
+- TypeScript
+- Astro static output
+- Markdown or MDX content collections for articles
+- Zod for validation
+- Google's current official Gemini JavaScript/TypeScript SDK
+- the current official Meta/Instagram API
+- Sharp for image optimization if appropriate
+- plain CSS or a very lightweight styling approach
+
+Do not introduce React, Vue, Svelte, Tailwind, a database, Prisma, Docker, Kubernetes, Firebase, Supabase, or another major dependency unless there is a compelling technical reason.
+
+Prefer native Astro functionality and ordinary TypeScript.
+
+Use strict TypeScript.
+
+Use the current stable APIs and SDKs available at implementation time. Consult official documentation instead of assuming old Instagram Graph API versions, Gemini endpoints, SDK syntax, or model names.
+
+Record important API/SDK versions in the README.
+
+---
+
+# 3. Repository Architecture
+
+Keep the repository understandable to someone opening it for the first time.
+
+Aim for approximately this structure:
+
+```text
+/
+├─ src/
+│  ├─ components/
+│  ├─ layouts/
+│  ├─ pages/
+│  │  ├─ index.astro
+│  │  ├─ about.astro
+│  │  ├─ contact.astro
+│  │  └─ posts/
+│  ├─ content/
+│  │  └─ posts/
+│  ├─ lib/
+│  │  ├─ instagram/
+│  │  ├─ gemini/
+│  │  ├─ content/
+│  │  └─ seo/
+│  ├─ config/
+│  │  └─ site.ts
+│  └─ styles/
+├─ public/
+│  ├─ media/
+│  │  └─ posts/
+│  ├─ favicon.*
+│  └─ robots.txt
+├─ scripts/
+│  ├─ sync-instagram.ts
+│  └─ deploy-neocities.*   # only if useful
+├─ fixtures/
+├─ .github/
+│  └─ workflows/
+├─ .env.example
+├─ astro.config.*
+├─ package.json
+├─ README.md
+└─ ...
+```
+
+This structure is a guideline. Improve it if there is a clearly simpler design.
+
+Do not create layers whose only purpose is theoretical future extensibility.
+
+---
+
+# 4. Site Configuration
+
+Create one obvious configuration file for organization-specific information.
+
+For example:
+
+```ts
+export const siteConfig = {
+  name: "...",
+  shortName: "...",
+  description: "...",
+  url: "...",
+  town: "...",
+  region: "...",
+  country: "...",
+  instagramUrl: "...",
+  contactEmail: "...",
+};
+```
+
+Changing the organization name, location, contact details, social URLs, and basic branding should not require searching through templates.
+
+Also create a human-editable organization context file such as:
+
+```text
+src/content/organization-context.md
+```
+
+This contains factual background Gemini may use when writing articles:
+
+- organization purpose
+- town
+- history
+- preferred terminology
+- recurring projects
+- writing tone
+- important names only when intentionally provided
+- factual context
+
+The AI must treat this as source material, not permission to invent additional facts.
+
+---
+
+# 5. Instagram Integration
+
+Use the official Meta/Instagram API.
+
+Do NOT scrape Instagram HTML.
+
+Encapsulate Instagram-specific API code behind a small module.
+
+The rest of the project should work with a simple internal representation similar to:
+
+```ts
+interface InstagramPost {
+  id: string;
+  permalink: string;
+  caption: string;
+  publishedAt: string;
+  mediaType: "IMAGE" | "CAROUSEL" | "VIDEO" | "REEL" | "UNKNOWN";
+  media: {
+    url: string;
+    type: "image" | "video";
+  }[];
+}
+```
+
+Adapt the actual Meta response into this representation.
+
+Support at minimum:
+
+- single image posts
+- image carousel posts
+
+Handle video/reel posts gracefully.
+
+If robustly downloading video would complicate the MVP, generate an article using its available metadata/poster and link prominently to the original Instagram post rather than building an elaborate video pipeline.
+
+The integration should:
+
+- authenticate through environment variables
+- never expose credentials to the frontend
+- fetch recent posts
+- fetch carousel children where required
+- normalize results
+- retry transient failures conservatively
+- produce understandable errors
+- respect API rate limits
+- avoid unnecessary requests
+
+Do not hardcode secrets.
+
+Provide `.env.example`.
+
+---
+
+# 6. Idempotency
+
+Synchronization MUST be safe to run repeatedly.
+
+Running:
+
+```bash
+npm run sync
+```
+
+five times against the same Instagram account must not create five copies of an article.
+
+Store the Instagram media ID in article frontmatter.
+
+Before importing something, detect whether that media ID already exists.
+
+Example:
+
+```yaml
+instagram:
+  mediaId: "..."
+  permalink: "..."
+  publishedAt: "..."
+```
+
+Do not require a separate database merely to track processed IDs if the content repository itself can be the source of truth.
+
+---
+
+# 7. Never Destroy Human Edits
+
+This requirement is important.
+
+Once an article has been generated, a human may manually edit it.
+
+Future Instagram syncs must NOT silently regenerate or overwrite that article.
+
+Default behavior:
+
+- existing Instagram media ID → skip
+- new Instagram media ID → create
+
+Provide an explicit force/regenerate mechanism only if it is simple and safe.
+
+For example:
+
+```bash
+npm run sync -- --force <media-id>
+```
+
+but ordinary synchronization must preserve manual edits.
+
+---
+
+# 8. Media Handling
+
+Do not permanently depend on Instagram CDN URLs.
+
+When importing a post:
+
+1. retrieve its image(s)
+2. download them during the sync process
+3. optimize them for the web
+4. save them into the site's own static media directory
+5. reference the local files from the generated article
+
+Use deterministic paths, for example:
+
+```text
+public/media/posts/<instagram-id>/01.webp
+public/media/posts/<instagram-id>/02.webp
+```
+
+Reasonable optimization targets:
+
+- preserve useful visual quality
+- avoid enormous originals
+- constrain maximum dimensions
+- use a modern web format where sensible
+- preserve aspect ratio
+- do not upscale small images
+
+Keep implementation straightforward.
+
+The website should use responsive image markup where practical.
+
+---
+
+# 9. Gemini Integration
+
+Create a separate Gemini module.
+
+The sync script should provide Gemini with:
+
+1. the Instagram caption
+2. publication timestamp
+3. relevant downloaded images
+4. organization context
+5. explicit factuality instructions
+
+Use Gemini's supported structured-output functionality and validate the response locally with Zod.
+
+Do not scrape arbitrary text from the model response.
+
+Define a structure similar to:
+
+```ts
+interface GeneratedArticle {
+  title: string;
+  slug: string;
+  summary: string;
+  body: string;
+  metaDescription: string;
+  tags: string[];
+  imageAltTexts: string[];
+  needsReview: boolean;
+  warnings: string[];
+}
+```
+
+The exact schema can be improved, but keep it small.
+
+The body should be clean Markdown rather than arbitrary HTML.
+
+Validate:
+
+- title length
+- slug format
+- meta description
+- required fields
+- number of alt texts versus images
+- body presence
+- unexpected values
+
+Gemini output must never be trusted merely because it conforms syntactically to JSON.
+
+---
+
+# 10. Gemini Editorial Rules
+
+Create a clear reusable prompt inside the Gemini module.
+
+The model is an editor, not a journalist inventing a story.
+
+Its instructions must include rules equivalent to:
+
+- Write a clear web article based only on supplied source material.
+- Improve readability and provide useful context.
+- Expand terse Instagram wording where possible without inventing facts.
+- Never fabricate names.
+- Never fabricate quotes.
+- Never fabricate attendance figures.
+- Never fabricate dates.
+- Never fabricate locations.
+- Never claim outcomes not present in the source material.
+- Never identify people visible in photographs unless their identities were explicitly supplied.
+- Do not infer sensitive characteristics about people.
+- Do not state uncertain visual interpretations as facts.
+- If information is unknown, omit it.
+- Avoid generic AI filler.
+- Avoid excessive promotional language.
+- Avoid pretending firsthand knowledge.
+- Do not mention that AI generated the article in the article body.
+- Use the organization's actual name and location when supported by organization context.
+- Produce descriptive but conservative image alt text.
+
+A short Instagram caption should become a useful article, but article length must be dictated by the available information.
+
+Do NOT force 1,000 words out of 30 words of source material.
+
+A concise, accurate 250-word article is preferable to a fabricated 900-word article.
+
+---
+
+# 11. Review Safety Valve
+
+Use `needsReview` and `warnings`.
+
+Examples that should potentially trigger review:
+
+- contradictory dates
+- ambiguous location
+- insufficient context
+- uncertain event description
+- malformed generated content
+- unexpected media handling problem
+- other factual uncertainty
+
+Support an environment setting such as:
+
+```text
+AUTO_PUBLISH=true
+```
+
+When automatic publishing is enabled and the generated content passes validation with `needsReview === false`, publish normally.
+
+If review is needed, save the article as a draft or otherwise exclude it from the production site while preserving the generated material for human inspection.
+
+Do not discard it.
+
+Document the review workflow.
+
+---
+
+# 12. Article Frontmatter
+
+Generated articles should preserve useful provenance.
+
+Use something similar to:
+
+```yaml
+---
+title: "..."
+description: "..."
+publishedAt: "2026-09-04T..."
+updatedAt: "..."
+draft: false
+
+tags:
+  - community
+  - event
+
+instagram:
+  mediaId: "..."
+  permalink: "https://instagram.com/..."
+  publishedAt: "..."
+
+generation:
+  generatedAt: "..."
+  model: "..."
+---
+```
+
+Do not expose tokens, prompts containing secrets, or internal API responses.
+
+The source caption may be preserved locally if useful, but decide deliberately whether it belongs in public output.
+
+---
+
+# 13. Website Design
+
+The website is for a small local organization.
+
+Design should be:
+
+- simple
+- warm
+- credible
+- accessible
+- responsive
+- fast
+- visually clean
+- easy to customize
+
+Do not make it look like a SaaS landing page.
+
+Do not overuse animation.
+
+Use semantic HTML.
+
+Build at minimum:
+
+### Home
+
+- organization introduction
+- clear location/context
+- latest updates
+- link to Instagram
+- basic navigation
+
+### Posts index
+
+- newest first
+- article card
+- title
+- publication date
+- excerpt
+- thumbnail
+
+### Individual article
+
+- title
+- publication date
+- article
+- image/gallery
+- descriptive alt text
+- original Instagram link
+- related/basic navigation
+
+### About
+
+Use organization configuration/context.
+
+### Contact
+
+Simple contact information without requiring a backend contact form.
+
+---
+
+# 14. SEO and Machine Readability
+
+Treat ordinary high-quality web publishing as the priority rather than attempting dubious "AI SEO" tricks.
+
+Implement:
+
+- meaningful page titles
+- meta descriptions
+- canonical URLs
+- semantic headings
+- human-readable permanent URLs
+- Open Graph metadata
+- appropriate Twitter/social metadata
+- XML sitemap
+- RSS/Atom feed
+- robots.txt
+- crawlable internal links
+- descriptive image alt text
+
+Add JSON-LD structured data.
+
+Use appropriate schema.org types such as:
+
+- Organization
+- Article or BlogPosting
+- BreadcrumbList where useful
+
+Ensure generated article metadata is represented correctly.
+
+Do not stuff keywords.
+
+Do not generate hidden text.
+
+Do not create machine-only doorway pages.
+
+The site must remain useful and understandable with JavaScript disabled.
+
+---
+
+# 15. Static Hosting Requirement
+
+The built website must consist entirely of static files.
+
+Running:
+
+```bash
+npm run build
+```
+
+must produce a directory such as:
+
+```text
+dist/
+```
+
+that can be uploaded directly to:
+
+- Neocities
+- GitHub Pages
+- Cloudflare Pages
+- Netlify static hosting
+- any ordinary static web host
+
+There must be no requirement for server-side rendering at runtime.
+
+Do not put API keys into bundled JavaScript.
+
+---
+
+# 16. GitHub Actions Automation
+
+Create GitHub Actions workflows.
+
+## Normal deployment
+
+On push to `main`:
+
+1. install dependencies
+2. run lint/type checks/tests
+3. build
+4. deploy the static output
+
+Make Neocities deployment optional/configurable.
+
+If an API token, username/password, or deployment secret is required, use GitHub Secrets.
+
+Never commit credentials.
+
+## Instagram synchronization
+
+Create a scheduled workflow that can also be invoked manually using `workflow_dispatch`.
+
+Approximately:
+
+1. checkout repository
+2. install dependencies
+3. run Instagram sync
+4. detect generated changes
+5. commit new article/media if anything changed
+6. run validation/tests
+7. build site
+8. deploy
+
+If nothing new exists:
+
+- succeed cleanly
+- do not create an empty commit
+
+Use sensible GitHub Action permissions.
+
+Do not create a complicated CI/CD system.
+
+Use a modest schedule appropriate for a small organization, e.g. once per hour.
+
+Document that GitHub scheduled workflows are not intended to guarantee second-by-second publishing.
+
+---
+
+# 17. Deployment Abstraction
+
+Do not couple application logic to Neocities.
+
+The core contract should simply be:
+
+```text
+npm run build
+→ dist/
+```
+
+Provide clear instructions for manually uploading `dist/`.
+
+Then optionally provide a Neocities deployment script or GitHub Action using its documented upload mechanism.
+
+A future move from Neocities to another static host should require no application rewrite.
+
+---
+
+# 18. Local Development Without Credentials
+
+The project must be usable by another developer without immediately obtaining Meta and Gemini credentials.
+
+Provide fixtures.
+
+For example:
+
+```text
+fixtures/
+  instagram-single-image.json
+  instagram-carousel.json
+```
+
+Provide a development mode or fixture command such as:
+
+```bash
+npm run sync:fixture
+```
+
+It should exercise:
+
+- Instagram normalization
+- content generation pipeline, with either a deterministic fake Gemini adapter or fixture response
+- article creation
+- local image handling where practical
+
+Do not make automated tests depend on live Meta or Gemini APIs.
+
+Live API tests should be optional.
+
+---
+
+# 19. Testing
+
+Keep testing proportional to the project.
+
+Test important logic, particularly:
+
+- Instagram response normalization
+- deduplication
+- slug generation
+- Gemini response validation
+- preservation of existing articles
+- draft/review behavior
+
+Avoid a giant test framework for trivial template code.
+
+The critical guarantee is:
+
+**Repeated synchronization must never duplicate or silently overwrite published content.**
+
+---
+
+# 20. Developer Commands
+
+Aim for a small command surface:
+
+```bash
+npm install
+npm run dev
+npm run build
+npm run check
+npm run test
+npm run sync
+npm run sync:fixture
+```
+
+Add:
+
+```bash
+npm run deploy
+```
+
+only if there is a clean reason.
+
+Document every command.
+
+---
+
+# 21. Environment Variables
+
+Create `.env.example`.
+
+Use clear names such as:
+
+```text
+INSTAGRAM_ACCESS_TOKEN=
+INSTAGRAM_USER_ID=
+GEMINI_API_KEY=
+GEMINI_MODEL=
+AUTO_PUBLISH=true
+
+SITE_URL=
+```
+
+Add deployment-specific values only where necessary.
+
+Do not require the user to modify source code to switch API keys or Gemini models.
+
+Never log secrets.
+
+---
+
+# 22. Error Handling
+
+Failures must be understandable.
+
+Examples:
+
+- Instagram authentication failure
+- malformed Instagram response
+- expired token
+- failed media download
+- Gemini API error
+- Gemini schema validation failure
+- image processing failure
+- filesystem failure
+
+One failed post should not corrupt existing content.
+
+Where practical, process posts individually so one problematic post does not destroy the whole sync operation.
+
+Exit non-zero for meaningful CI failures.
+
+Log enough context to troubleshoot without dumping tokens or sensitive API responses.
+
+---
+
+# 23. Security
+
+Follow these rules:
+
+- secrets only server-side/CI-side
+- no Gemini key in browser
+- no Instagram token in browser
+- no committed `.env`
+- sanitize generated content
+- do not permit arbitrary generated HTML
+- use Markdown rendering safely
+- validate external URLs
+- constrain filesystem paths derived from API content
+- do not trust AI-generated filenames or paths
+- do not blindly execute model-generated content
+
+The AI model is untrusted input.
+
+Treat Instagram API content as external input too.
+
+---
+
+# 24. README
+
+Write an excellent README for a moderately technical maintainer.
+
+Include:
+
+## What this project does
+
+Explain the architecture in plain language.
+
+## Local setup
+
+Exact commands.
+
+## Site customization
+
+Where to change organization information, styling, navigation, logo, etc.
+
+## Instagram setup
+
+Explain how to create/configure the appropriate current Meta application/account permissions using current official documentation.
+
+Do not rely solely on brittle screenshots.
+
+## Gemini setup
+
+Explain how to obtain/configure the API key and model.
+
+## First sync
+
+Explain how to test safely.
+
+## Draft review
+
+Explain `needsReview`.
+
+## GitHub Actions
+
+Explain required secrets and scheduled publishing.
+
+## Neocities
+
+Explain how to deploy the generated static `dist/` directory.
+
+## Other static hosts
+
+Explain that the deployment layer can be replaced.
+
+## Troubleshooting
+
+Cover likely authentication/API/deployment errors.
+
+## Updating APIs
+
+Explain where Instagram/Gemini adapter code lives so future API version changes remain localized.
+
+---
+
+# 25. Maintainability Requirements
+
+Prefer boring code.
+
+A maintainer should be able to understand the major system by reading:
+
+```text
+scripts/sync-instagram.ts
+src/lib/instagram/*
+src/lib/gemini/*
+```
+
+Do not build a generic event bus.
+
+Do not build dependency injection infrastructure.
+
+Do not build a plugin framework.
+
+Do not build microservices.
+
+Do not build a repository layer for files.
+
+Do not create classes merely to wrap functions.
+
+Use small pure functions where they improve clarity.
+
+Use comments for decisions and non-obvious constraints rather than narrating obvious code.
+
+---
+
+# 26. Important Product Decisions
+
+Use these defaults unless implementation realities strongly justify another choice:
+
+### Source of truth
+
+Git repository + Markdown content.
+
+### Database
+
+None.
+
+### Runtime backend
+
+None.
+
+### Publication mechanism
+
+GitHub Actions.
+
+### Site rendering
+
+Static.
+
+### Instagram retrieval
+
+Official API.
+
+### AI
+
+Gemini.
+
+### AI response format
+
+Structured JSON validated with Zod.
+
+### Images
+
+Copied locally and optimized.
+
+### Existing generated articles
+
+Never overwrite automatically.
+
+### Human edits
+
+Preserved permanently unless explicitly regenerated.
+
+### Failed/uncertain AI result
+
+Draft/review rather than public publication.
+
+### JavaScript dependency for visitors
+
+As close to zero as practical.
+
+---
+
+# 27. Acceptance Criteria
+
+Do not consider the project complete until all of these work.
+
+### Static site
+
+```bash
+npm install
+npm run build
+```
+
+successfully generates a deployable static `dist/` directory.
+
+### Fixture pipeline
+
+```bash
+npm run sync:fixture
+```
+
+creates at least one realistic article from fixture data.
+
+### Article rendering
+
+The fixture-generated article appears on:
+
+- the home page
+- posts index
+- its own permanent URL
+
+### Images
+
+A carousel can render multiple locally stored images.
+
+### Deduplication
+
+Running fixture sync a second time creates no duplicate article.
+
+### Edit preservation
+
+Manually editing the generated article and running sync again does not overwrite the edit.
+
+### Draft behavior
+
+A generated result marked `needsReview` does not appear publicly.
+
+### SEO
+
+Generated article includes:
+
+- unique title
+- meta description
+- canonical URL
+- Open Graph tags
+- Article JSON-LD
+
+The overall site includes:
+
+- sitemap
+- robots.txt
+- organization structured data
+- RSS/Atom feed
+
+### Security
+
+The production frontend contains no Instagram or Gemini secrets.
+
+### CI
+
+GitHub Action definitions are syntactically valid and documented.
+
+---
+
+# 28. Implementation Process
+
+First inspect the repository.
+
+If it is empty, initialize the project.
+
+Then implement the project fully.
+
+Do not stop after producing a plan.
+
+Work in small coherent steps and run the project locally as you go.
+
+Run:
+
+- formatting
+- TypeScript checks
+- tests
+- production build
+
+Fix issues you encounter.
+
+Avoid asking me questions for ordinary implementation decisions. Choose the simplest sensible default and document it.
+
+Only leave a TODO when completing it genuinely requires credentials or external account configuration that cannot be performed locally.
+
+The code itself should otherwise be complete.
+
+---
+
+# 29. Final Response
+
+When finished, give me:
+
+1. a concise architectural summary
+2. the resulting repository structure
+3. commands to run locally
+4. environment variables I need
+5. GitHub Secrets I need
+6. steps needed to connect Instagram
+7. steps needed to connect Gemini
+8. steps to deploy to Neocities
+9. any parts that could not be tested without real credentials
+10. confirmation that fixture sync, tests, type checks, and production build were run successfully
+
+Do not claim something was tested if it was not.
+
+Above all, keep this project simple enough that one person can understand and maintain it.

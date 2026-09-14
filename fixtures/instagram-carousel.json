@@ -1,0 +1,21 @@
+{
+  "id": "990000000000002",
+  "media_type": "CAROUSEL_ALBUM",
+  "caption": "DEMO – kein echtes Ereignis. Gemeinsam lesen, Fragen stellen und ins Gespräch kommen: Dieser Beispielbeitrag zeigt eine Ankündigung für einen offenen Leseabend. Termin und Treffpunkt sind noch nicht festgelegt. Verbindliche Informationen folgen im Originalbeitrag.",
+  "permalink": "https://www.instagram.com/studentsforpalestine.osna/",
+  "timestamp": "2026-09-03T10:00:00+0000",
+  "children": {
+    "data": [
+      {
+        "id": "990000000000021",
+        "media_type": "IMAGE",
+        "media_url": "https://fixture.invalid/poster-two.png"
+      },
+      {
+        "id": "990000000000022",
+        "media_type": "IMAGE",
+        "media_url": "https://fixture.invalid/poster-three.png"
+      }
+    ]
+  }
+}
