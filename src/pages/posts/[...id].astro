@@ -29,7 +29,6 @@ const structured = {
   image: data.images.map((img) => absoluteUrl(img.src)),
   author: { "@id": `${siteConfig.url}/#organization` },
   publisher: { "@id": `${siteConfig.url}/#organization` },
-  isBasedOn: data.instagram.permalink,
   keywords: data.tags.join(", "),
 };
 const breadcrumbs = {
@@ -111,12 +110,7 @@ const breadcrumbs = {
       <p class="eyebrow">{data.tags.join(" · ")}</p><a
         class="button"
         href={data.instagram.permalink}
-        rel="external"
-        >{
-          data.demo
-            ? "Zum Instagram-Konto"
-            : "Originalbeitrag / Video auf Instagram"
-        } ↗</a
+        rel="external">Instagram-Profil ↗</a
       ><p><a href="/posts/">← Zurück zu allen Beiträgen</a></p>
     </footer>
   </article>

@@ -570,7 +570,7 @@ h2 em,
 .card-image img {
   display: block;
   width: 100%;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 4 / 5;
   object-fit: contain;
   transition: transform 0.4s ease;
 }
